@@ -4,13 +4,15 @@ const cors = require('cors');
 const nodemailer = require('nodemailer'); // <-- Added Nodemailer
 
 const app = express();
+const PORT = process.env.PORT || 5000;
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://shiburout:Shibu%400852@cluster0.4zsh6x9.mongodb.net/?appName=Cluster0';
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); 
 
 // Connect to MongoDB 
-mongoose.connect('mongodb+srv://shiburout:Shibu%400852@cluster0.4zsh6x9.mongodb.net/?appName=Cluster0')
+mongoose.connect(MONGODB_URI)
   .then(() => console.log("Connected to MongoDB"))
   .catch(err => console.error("Could not connect to MongoDB", err));
 
@@ -39,9 +41,11 @@ app.get('/api/portfolio', async (req, res) => {
 // Save/Update portfolio data
 app.post('/api/portfolio', async (req, res) => {
   try {
-    await Portfolio.deleteMany({});
-    const newPortfolio = new Portfolio(req.body);
-    await newPortfolio.save();
+    await Portfolio.findOneAndUpdate({}, req.body, {
+      new: true,
+      overwrite: true,
+      upsert: true
+    });
     res.json({ message: "Portfolio saved successfully!" });
   } catch (error) {
     res.status(500).json({ error: "Failed to save data" });
@@ -79,5 +83,4 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
-const PORT = 5000;
 app.listen(PORT, () => console.log(`Backend server running on port ${PORT}`));
