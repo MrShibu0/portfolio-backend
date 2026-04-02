@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' })); 
 
 // Connect to MongoDB 
-mongoose.connect('mongodb+srv://shiburout:Shibu@0852@cluster0.4zsh6x9.mongodb.net/?appName=Cluster0')
+mongoose.connect('mongodb+srv://shiburout:Shibu%400852@cluster0.4zsh6x9.mongodb.net/?appName=Cluster0')
   .then(() => console.log("Connected to MongoDB"))
   .catch(err => console.error("Could not connect to MongoDB", err));
 
