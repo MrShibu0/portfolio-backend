@@ -5,7 +5,41 @@ const nodemailer = require('nodemailer'); // <-- Added Nodemailer
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://shiburout:Shibu%400852@cluster0.4zsh6x9.mongodb.net/?appName=Cluster0';
+const DEFAULT_MONGODB_URI = 'mongodb+srv://shiburout:Shibu%400852@cluster0.4zsh6x9.mongodb.net/?appName=Cluster0';
+
+const normalizeMongoUri = (uri) => {
+  if (!uri || !uri.startsWith('mongodb')) {
+    return DEFAULT_MONGODB_URI;
+  }
+
+  const protocolSeparatorIndex = uri.indexOf('://');
+  const credentialsStartIndex = protocolSeparatorIndex + 3;
+  const firstSlashIndex = uri.indexOf('/', credentialsStartIndex);
+  const authorityEndIndex = firstSlashIndex === -1 ? uri.length : firstSlashIndex;
+  const authority = uri.slice(credentialsStartIndex, authorityEndIndex);
+  const lastAtIndex = authority.lastIndexOf('@');
+
+  if (lastAtIndex === -1) {
+    return uri;
+  }
+
+  const credentials = authority.slice(0, lastAtIndex);
+  const host = authority.slice(lastAtIndex + 1);
+  const colonIndex = credentials.indexOf(':');
+
+  if (colonIndex === -1) {
+    return uri;
+  }
+
+  const username = credentials.slice(0, colonIndex);
+  const password = credentials.slice(colonIndex + 1);
+  const encodedPassword = encodeURIComponent(decodeURIComponent(password));
+
+  return `${uri.slice(0, credentialsStartIndex)}${username}:${encodedPassword}@${host}${uri.slice(authorityEndIndex)}`;
+};
+
+const MONGODB_URI = normalizeMongoUri(process.env.MONGODB_URI || DEFAULT_MONGODB_URI);
+const EMPTY_PORTFOLIO = { name: 'Your Name', subtitle: 'Developer', skills: [], projects: [] };
 
 // Middleware
 app.use(cors());
@@ -30,10 +64,15 @@ const Portfolio = mongoose.model('Portfolio', portfolioSchema);
 // Get portfolio data
 app.get('/api/portfolio', async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.json(EMPTY_PORTFOLIO);
+    }
+
     let data = await Portfolio.findOne();
-    if (!data) data = { name: "Your Name", subtitle: "Developer", skills: [], projects: [] };
+    if (!data) data = EMPTY_PORTFOLIO;
     res.json(data);
   } catch (error) {
+    console.error('Portfolio fetch failed:', error);
     res.status(500).json({ error: "Failed to fetch data" });
   }
 });
@@ -41,6 +80,10 @@ app.get('/api/portfolio', async (req, res) => {
 // Save/Update portfolio data
 app.post('/api/portfolio', async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ error: 'Database not connected yet. Please try again in a few seconds.' });
+    }
+
     await Portfolio.findOneAndUpdate({}, req.body, {
       new: true,
       overwrite: true,
@@ -48,6 +91,7 @@ app.post('/api/portfolio', async (req, res) => {
     });
     res.json({ message: "Portfolio saved successfully!" });
   } catch (error) {
+    console.error('Portfolio save failed:', error);
     res.status(500).json({ error: "Failed to save data" });
   }
 });
