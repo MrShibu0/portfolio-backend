@@ -118,6 +118,16 @@ app.post('/api/legacy/portfolio', async (req, res) => {
   res.status(410).json({ message: 'Legacy unified endpoint deprecated. Use granular CMS forms.' });
 });
 
+app.get('/api/media-debug', async (req, res) => {
+  try {
+    const Media = require('./models/Media');
+    const docs = await Media.find().sort({ createdAt: -1 });
+    res.json(docs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Global Error handler
 app.use(errorHandler);
 
