@@ -21,15 +21,19 @@ const uploadFile = async (req, res, next) => {
     }
 
     const folder = req.query.folder || req.body.folder || 'media';
-    const filePath = `/uploads/${folder}/${req.file.filename}`;
+    
+    // Convert req.file buffer to base64 data URI
+    const base64Data = req.file.buffer.toString('base64');
+    const dataUri = `data:${req.file.mimetype};base64,${base64Data}`;
+    const uniqueFilename = `file-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 
     const media = await Media.create({
-      filename: req.file.filename,
+      filename: uniqueFilename,
       originalName: req.file.originalname,
       folder: folder,
       mimeType: req.file.mimetype,
       size: req.file.size,
-      url: filePath
+      url: dataUri
     });
 
     await logAction(req.user.username, 'UPLOAD_MEDIA', `Uploaded file: ${media.originalName} to folder ${media.folder}`);
