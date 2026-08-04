@@ -16,6 +16,7 @@ const projectRoutes = require('./routes/projectRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const mediaRoutes = require('./routes/mediaRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
 
 // Models for compatibility mappings
 const Hero = require('./models/Hero');
@@ -79,6 +80,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Backward compatibility GET endpoint for visitor landing layout
 app.get('/api/legacy/portfolio', async (req, res) => {
